@@ -4,29 +4,29 @@ import {
   FormControlLabel,
   Switch,
   Button,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Grid,
 } from "@mui/material";
 import axios from "axios";
 import { useState } from "react";
 
-function FrequentItemsetForm(props: { dataset: string }) {
+var freqItemsetColumns = [
+  { label: "Itemset", field: "itemset" },
+  { label: "Support", field: "support" },
+];
+
+function FrequentItemsetForm(props: {
+  dataset: string;
+  setResult: (res: { columns: any[]; data: any[] }) => void;
+  expanded: boolean;
+}) {
   const [contextLevel, setContextLevel] = useState<number>(0); // The context level parameter
   const [userIndex, setUserIndex] = useState<number>(0); // The user index parameter
   const [minSupport, setMinSupport] = useState<number>(0.35); // The minimum support parameter
   const [tempWindow, setTempWindow] = useState<number>(3); // The temporal window parameter
   const [gapsFlag, setGapsFlag] = useState<boolean>(false); // The gaps parameter
   const [agedFlag, setAgedFlag] = useState<boolean>(true); // The aged parameter
-  const [result, setResult] = useState<
-    Array<{ support: number; itemset: any }>
-  >([]);
+
+  var gridSize = props.expanded ? 6 : 2;
 
   const getFrequentItemsets = () => {
     if (!props.dataset) {
@@ -52,13 +52,15 @@ function FrequentItemsetForm(props: { dataset: string }) {
         }
       )
       .then((response) => {
-        setResult(
-          response.data.sort(
-            (a: { support: number }, b: { support: number }) => {
-              return b.support - a.support;
-            }
-          )
-        );
+        let prepareData = response.data
+          .sort((a: { support: number }, b: { support: number }) => {
+            return b.support - a.support;
+          })
+          .map((item: any) => ({
+            ...item,
+            itemset: item.itemset.map((x: any) => x.fullName).join(", "),
+          }));
+        props.setResult({ columns: freqItemsetColumns, data: prepareData });
       })
       .catch((error) => console.error(error));
   };
@@ -66,7 +68,7 @@ function FrequentItemsetForm(props: { dataset: string }) {
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
       <Grid container spacing={2}>
-        <Grid item xs={6}>
+        <Grid item xs={gridSize}>
           <TextField
             id="context-level-input"
             label="Context level"
@@ -79,7 +81,7 @@ function FrequentItemsetForm(props: { dataset: string }) {
             margin="normal"
           />
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={gridSize}>
           <TextField
             id="user-index-input"
             label="User index"
@@ -92,7 +94,7 @@ function FrequentItemsetForm(props: { dataset: string }) {
             margin="normal"
           />
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={gridSize}>
           <TextField
             id="temp-window-input"
             label="Temporal window"
@@ -105,7 +107,7 @@ function FrequentItemsetForm(props: { dataset: string }) {
             margin="normal"
           />
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={gridSize}>
           <TextField
             id="min-support-input"
             label="Minimum support"
@@ -153,51 +155,6 @@ function FrequentItemsetForm(props: { dataset: string }) {
           </Button>
         </Grid>
       </Grid>
-
-      {result.length > 0 && (
-        <>
-          <Typography sx={{ mt: 4, mb: 1 }}>
-            Total row: {result.length}
-          </Typography>
-          <TableContainer component={Paper}>
-            <Table
-              sx={{ minWidth: 650 }}
-              size="small"
-              aria-label="Frequent Itemsets Table"
-            >
-              <TableHead>
-                <TableRow>
-                  <TableCell>Itemsets</TableCell>
-                  <TableCell align="right">Support</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {result.map((row, index) => (
-                  <TableRow
-                    key={index}
-                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                  >
-                    <TableCell component="th" scope="row">
-                      <Typography>
-                        {row.itemset[0].fullName}
-                        {row.itemset.length > 1 &&
-                          row.itemset
-                            .slice(1, row.itemset.length)
-                            .reduce(
-                              (res: string, x: { fullName: string }) =>
-                                (res += "," + x.fullName),
-                              ""
-                            )}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">{row.support}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </>
-      )}
     </Box>
   );
 }

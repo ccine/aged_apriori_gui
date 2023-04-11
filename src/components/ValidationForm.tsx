@@ -9,7 +9,11 @@ import {
 import axios from "axios";
 import { useState } from "react";
 
-function ValidationForm(props: { dataset: string }) {
+function ValidationForm(props: {
+  dataset: string;
+  setResult: (res: { columns: any[]; data: any[] }) => void;
+  expanded: boolean;
+}) {
   const [contextLevel, setContextLevel] = useState<number>(0); // The context level parameter
   const [testSize, setTestSize] = useState<number>(20); // The test size parameter
   const [tempWindow, setTempWindow] = useState<number>(3); // The temporal window parameter
@@ -17,7 +21,8 @@ function ValidationForm(props: { dataset: string }) {
   const [minConfidence, setMinConfidence] = useState<number>(0.8); // The minimum confidence parameter
   const [feature, setFeature] = useState<String>("ZL"); // The feature parameter
   const [gapsFlag, setGapsFlag] = useState<boolean>(false); // The gaps parameter
-  const [result, setResult] = useState<Array<any>>([]);
+
+  var gridSize = props.expanded ? 4 : 2;
 
   const getFrequentItemsets = () => {
     if (!props.dataset) {
@@ -53,7 +58,7 @@ function ValidationForm(props: { dataset: string }) {
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
       <Grid container spacing={2}>
-        <Grid item xs={4}>
+        <Grid item xs={gridSize}>
           <TextField
             id="context-level-input"
             label="Context level"
@@ -66,7 +71,7 @@ function ValidationForm(props: { dataset: string }) {
             margin="normal"
           />
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={gridSize}>
           <TextField
             id="test-size-input"
             label="Test size"
@@ -79,7 +84,7 @@ function ValidationForm(props: { dataset: string }) {
             margin="normal"
           />
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={gridSize}>
           <TextField
             id="temp-window-input"
             label="Temporal window"
@@ -92,7 +97,7 @@ function ValidationForm(props: { dataset: string }) {
             margin="normal"
           />
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={gridSize}>
           <TextField
             id="min-support-input"
             label="Minimum support"
@@ -105,7 +110,7 @@ function ValidationForm(props: { dataset: string }) {
             margin="normal"
           />
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={gridSize}>
           <TextField
             id="min-confidence-input"
             label="Minimum confidence"
@@ -118,7 +123,7 @@ function ValidationForm(props: { dataset: string }) {
             margin="normal"
           />
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={gridSize}>
           <TextField
             id="feature-input"
             label="Feature"
@@ -154,12 +159,6 @@ function ValidationForm(props: { dataset: string }) {
           </Button>
         </Grid>
       </Grid>
-
-      {result.length > 0 && (
-        <>
-          {JSON.stringify(result)}
-        </>
-      )}
     </Box>
   );
 }

@@ -4,20 +4,24 @@ import {
   FormControlLabel,
   Switch,
   Button,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Grid,
 } from "@mui/material";
 import axios from "axios";
 import { useState } from "react";
 
-function RulesForm(props: { dataset: string }) {
+var rulesColumns = [
+  { label: "Antecedent", field: "antecedent", type: "string" },
+  { label: "Consequent", field: "consequent", type: "string" },
+  { label: "Confidence", field: "confidence", type: "number" },
+  { label: "Support", field: "support", type: "number" },
+  { label: "Completeness", field: "completeness", type: "number" },
+];
+
+function RulesForm(props: {
+  dataset: string;
+  setResult: (res: { columns: any[]; data: any[] }) => void;
+  expanded: boolean;
+}) {
   const [contextLevel, setContextLevel] = useState<number>(0); // The context level parameter
   const [userIndex, setUserIndex] = useState<number>(0); // The user index parameter
   const [tempWindow, setTempWindow] = useState<number>(3); // The temporal window parameter
@@ -26,7 +30,8 @@ function RulesForm(props: { dataset: string }) {
   const [feature, setFeature] = useState<String>("ZL"); // The feature parameter
   const [gapsFlag, setGapsFlag] = useState<boolean>(false); // The gaps parameter
   const [agedFlag, setAgedFlag] = useState<boolean>(true); // The aged parameter
-  const [result, setResult] = useState<Array<any>>([]);
+
+  var gridSize = props.expanded ? 4 : 2;
 
   const getFrequentItemsets = () => {
     if (!props.dataset) {
@@ -55,13 +60,18 @@ function RulesForm(props: { dataset: string }) {
         },
       })
       .then((response) => {
-        setResult(
-          response.data.sort(
-            (a: { confidence: number }, b: { confidence: number }) => {
-              return b.confidence - a.confidence;
-            }
-          )
-        );
+        let prepareData = response.data
+          .sort((a: { confidence: number }, b: { confidence: number }) => {
+            return b.confidence - a.confidence;
+          })
+          .map((item: any) => ({
+            ...item,
+            antecedent: item.antecedent
+              .map((ant: any) => ant.fullName)
+              .join(", "),
+            consequent: item.consequent.fullName,
+          }));
+        props.setResult({ columns: rulesColumns, data: prepareData });
       })
       .catch((error) => console.error(error));
   };
@@ -69,7 +79,7 @@ function RulesForm(props: { dataset: string }) {
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
       <Grid container spacing={2}>
-        <Grid item xs={4}>
+        <Grid item xs={gridSize}>
           <TextField
             id="context-level-input"
             label="Context level"
@@ -82,7 +92,7 @@ function RulesForm(props: { dataset: string }) {
             margin="normal"
           />
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={gridSize}>
           <TextField
             id="user-index-input"
             label="User index"
@@ -95,7 +105,7 @@ function RulesForm(props: { dataset: string }) {
             margin="normal"
           />
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={gridSize}>
           <TextField
             id="temp-window-input"
             label="Temporal window"
@@ -108,7 +118,7 @@ function RulesForm(props: { dataset: string }) {
             margin="normal"
           />
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={gridSize}>
           <TextField
             id="min-support-input"
             label="Minimum support"
@@ -121,7 +131,7 @@ function RulesForm(props: { dataset: string }) {
             margin="normal"
           />
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={gridSize}>
           <TextField
             id="min-confidence-input"
             label="Minimum confidence"
@@ -134,7 +144,7 @@ function RulesForm(props: { dataset: string }) {
             margin="normal"
           />
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={gridSize}>
           <TextField
             id="feature-input"
             label="Feature"
@@ -182,57 +192,6 @@ function RulesForm(props: { dataset: string }) {
           </Button>
         </Grid>
       </Grid>
-
-      {result.length > 0 && (
-        <>
-          <Typography sx={{ mt: 4, mb: 1 }}>
-            Total row: {result.length}
-          </Typography>
-          <TableContainer component={Paper}>
-            <Table
-              sx={{ minWidth: 650 }}
-              size="small"
-              aria-label="Frequent Itemsets Table"
-            >
-              <TableHead>
-                <TableRow>
-                  <TableCell>Antecedent</TableCell>
-                  <TableCell>Consequent</TableCell>
-                  <TableCell align="right">Confidence</TableCell>
-                  <TableCell align="right">Support</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {result.map((row, index) => (
-                  <TableRow
-                    key={index}
-                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                  >
-                    <TableCell component="th" scope="row">
-                      <Typography>
-                        {row.antecedent[0].fullName}
-                        {row.antecedent.length > 1 &&
-                          row.antecedent
-                            .slice(1, row.antecedent.length)
-                            .reduce(
-                              (res: string, x: { fullName: string }) =>
-                                (res += "," + x.fullName),
-                              ""
-                            )}
-                      </Typography>
-                    </TableCell>
-                    <TableCell component="th" scope="row">
-                      <Typography>{row.consequent.fullName}</Typography>
-                    </TableCell>
-                    <TableCell align="right">{row.confidence}</TableCell>
-                    <TableCell align="right">{row.support}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </>
-      )}
     </Box>
   );
 }
