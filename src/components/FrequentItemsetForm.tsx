@@ -8,17 +8,16 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { useState } from "react";
+import { TabFormProps } from "../types";
 
 var freqItemsetColumns = [
-  { label: "Itemset", field: "itemset" },
-  { label: "Support", field: "support" },
+  { label: "Itemset", field: "itemset", type: "string" },
+  { label: "Support", field: "support", type: "number" },
 ];
 
-function FrequentItemsetForm(props: {
-  dataset: string;
-  setResult: (res: { columns: any[]; data: any[] }) => void;
-  expanded: boolean;
-}) {
+function FrequentItemsetForm(props: TabFormProps) {
+  const { dataset, setResult, setLoading, setError, expanded } = props;
+
   const [contextLevel, setContextLevel] = useState<number>(0); // The context level parameter
   const [userIndex, setUserIndex] = useState<number>(0); // The user index parameter
   const [minSupport, setMinSupport] = useState<number>(0.35); // The minimum support parameter
@@ -26,10 +25,10 @@ function FrequentItemsetForm(props: {
   const [gapsFlag, setGapsFlag] = useState<boolean>(false); // The gaps parameter
   const [agedFlag, setAgedFlag] = useState<boolean>(true); // The aged parameter
 
-  var gridSize = props.expanded ? 6 : 2;
+  var gridSize = expanded ? 6 : 2;
 
   const getFrequentItemsets = () => {
-    if (!props.dataset) {
+    if (!dataset) {
       //TODO
       return;
     }
@@ -37,32 +36,31 @@ function FrequentItemsetForm(props: {
       //TODO
       return;
     }
+    setLoading(true);
     axios
-      .get(
-        "http://127.0.0.1:8080/aged-apriori/frequent-itemsets/" + props.dataset,
-        {
-          params: {
-            contextLevel: contextLevel,
-            userIndex: userIndex,
-            temporalWindow: tempWindow,
-            minSupport: minSupport,
-            gapsFlag: gapsFlag,
-            aged: agedFlag,
-          },
-        }
-      )
-      .then((response) => {
-        let prepareData = response.data
-          .sort((a: { support: number }, b: { support: number }) => {
-            return b.support - a.support;
-          })
-          .map((item: any) => ({
-            ...item,
-            itemset: item.itemset.map((x: any) => x.fullName).join(", "),
-          }));
-        props.setResult({ columns: freqItemsetColumns, data: prepareData });
+      .get("http://127.0.0.1:8080/aged-apriori/frequent-itemsets/" + dataset, {
+        params: {
+          contextLevel: contextLevel,
+          userIndex: userIndex,
+          temporalWindow: tempWindow,
+          minSupport: minSupport,
+          gapsFlag: gapsFlag,
+          aged: agedFlag,
+        },
       })
-      .catch((error) => console.error(error));
+      .then((response) => {
+        let prepareData = response.data.map((item: any) => ({
+          ...item,
+          itemset: item.itemset.map((x: any) => x.fullName).join(", "),
+        }));
+        setResult({ columns: freqItemsetColumns, data: prepareData });
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error(error);
+        setError(true);
+        setLoading(false);
+      });
   };
 
   return (

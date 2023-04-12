@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { useState } from "react";
+import { TabFormProps } from "../types";
 
 var rulesColumns = [
   { label: "Antecedent", field: "antecedent", type: "string" },
@@ -17,11 +18,9 @@ var rulesColumns = [
   { label: "Completeness", field: "completeness", type: "number" },
 ];
 
-function RulesForm(props: {
-  dataset: string;
-  setResult: (res: { columns: any[]; data: any[] }) => void;
-  expanded: boolean;
-}) {
+function RulesForm(props: TabFormProps) {
+  const { dataset, setResult, setLoading, setError, expanded } = props;
+
   const [contextLevel, setContextLevel] = useState<number>(0); // The context level parameter
   const [userIndex, setUserIndex] = useState<number>(0); // The user index parameter
   const [tempWindow, setTempWindow] = useState<number>(3); // The temporal window parameter
@@ -31,10 +30,10 @@ function RulesForm(props: {
   const [gapsFlag, setGapsFlag] = useState<boolean>(false); // The gaps parameter
   const [agedFlag, setAgedFlag] = useState<boolean>(true); // The aged parameter
 
-  var gridSize = props.expanded ? 4 : 2;
+  var gridSize = expanded ? 4 : 2;
 
   const getFrequentItemsets = () => {
-    if (!props.dataset) {
+    if (!dataset) {
       //TODO
       return;
     }
@@ -46,8 +45,9 @@ function RulesForm(props: {
       //TODO
       return;
     }
+    setLoading(true);
     axios
-      .get("http://127.0.0.1:8080/aged-apriori/rules/" + props.dataset, {
+      .get("http://127.0.0.1:8080/aged-apriori/rules/" + dataset, {
         params: {
           contextLevel: contextLevel,
           userIndex: userIndex,
@@ -60,20 +60,21 @@ function RulesForm(props: {
         },
       })
       .then((response) => {
-        let prepareData = response.data
-          .sort((a: { confidence: number }, b: { confidence: number }) => {
-            return b.confidence - a.confidence;
-          })
-          .map((item: any) => ({
-            ...item,
-            antecedent: item.antecedent
-              .map((ant: any) => ant.fullName)
-              .join(", "),
-            consequent: item.consequent.fullName,
-          }));
-        props.setResult({ columns: rulesColumns, data: prepareData });
+        let prepareData = response.data.map((item: any) => ({
+          ...item,
+          antecedent: item.antecedent
+            .map((ant: any) => ant.fullName)
+            .join(", "),
+          consequent: item.consequent.fullName,
+        }));
+        setResult({ columns: rulesColumns, data: prepareData });
+        setLoading(false);
       })
-      .catch((error) => console.error(error));
+      .catch((error) => {
+        console.error(error);
+        setError(true);
+        setLoading(false);
+      });
   };
 
   return (
@@ -188,7 +189,7 @@ function RulesForm(props: {
             color="primary"
             size="large"
           >
-            Get Frequent Itemsets
+            Get Rules
           </Button>
         </Grid>
       </Grid>

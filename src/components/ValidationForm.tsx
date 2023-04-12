@@ -8,12 +8,11 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { useState } from "react";
+import { TabFormProps } from "../types";
 
-function ValidationForm(props: {
-  dataset: string;
-  setResult: (res: { columns: any[]; data: any[] }) => void;
-  expanded: boolean;
-}) {
+function ValidationForm(props: TabFormProps) {
+  const { dataset, setResult, setLoading, setError, expanded } = props;
+
   const [contextLevel, setContextLevel] = useState<number>(0); // The context level parameter
   const [testSize, setTestSize] = useState<number>(20); // The test size parameter
   const [tempWindow, setTempWindow] = useState<number>(3); // The temporal window parameter
@@ -22,10 +21,10 @@ function ValidationForm(props: {
   const [feature, setFeature] = useState<String>("ZL"); // The feature parameter
   const [gapsFlag, setGapsFlag] = useState<boolean>(false); // The gaps parameter
 
-  var gridSize = props.expanded ? 4 : 2;
+  var gridSize = expanded ? 4 : 2;
 
   const getFrequentItemsets = () => {
-    if (!props.dataset) {
+    if (!dataset) {
       //TODO
       return;
     }
@@ -38,7 +37,7 @@ function ValidationForm(props: {
       return;
     }
     axios
-      .get("http://127.0.0.1:8080/aged-apriori/validation/" + props.dataset, {
+      .get("http://127.0.0.1:8080/aged-apriori/validation/" + dataset, {
         params: {
           contextLevel: contextLevel,
           testSize: testSize,
@@ -52,7 +51,11 @@ function ValidationForm(props: {
       .then((response) => {
         console.log(response.data);
       })
-      .catch((error) => console.error(error));
+      .catch((error) => {
+        console.error(error);
+        setError(true);
+        setLoading(false);
+      });
   };
 
   return (
@@ -155,7 +158,7 @@ function ValidationForm(props: {
             color="primary"
             size="large"
           >
-            Get Frequent Itemsets
+            Get Validation
           </Button>
         </Grid>
       </Grid>

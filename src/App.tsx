@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Box,
   Button,
+  CircularProgress,
   Container,
   CssBaseline,
   FormControl,
@@ -21,21 +22,24 @@ import FrequentItemsetForm from "./components/FrequentItemsetForm";
 import RulesForm from "./components/RulesForm";
 import ValidationForm from "./components/ValidationForm";
 import ResultComponent from "./components/ResultComponent";
-import EnhancedTable from "./components/test sort table";
 import { a11yProps, TabPanel } from "./components/TabFunction";
+import { ResultType } from "./types";
 
 function App() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [datasets, setDatasets] = useState<
     { name: string; numberOfUsers: number }[]
   >([]);
   const [chosenDataset, setChosenDataset] = useState<string>("");
   const [tabIndex, setTabIndex] = useState<number>(0);
-  const [result, setResult] = useState<{ columns: any[]; data: any[] }>();
+  const [result, setResult] = useState<ResultType>();
+  const [error, setError] = useState<boolean>(false);
 
   const mdTheme = createTheme();
 
-  useEffect(() => {
+  function getDatasets() {
+    setError(false);
+    setLoading(true);
     axios
       .get("http://127.0.0.1:8080/aged-apriori/datasets")
       .then((response) => {
@@ -43,7 +47,15 @@ function App() {
         setChosenDataset(response.data[0].name);
         setLoading(false);
       })
-      .catch((error) => console.error(error));
+      .catch((error) => {
+        console.error(error);
+        setError(true);
+        setLoading(false);
+      });
+  }
+
+  useEffect(() => {
+    getDatasets();
   }, []);
 
   return (
@@ -66,15 +78,12 @@ function App() {
             <Typography sx={{ mb: 4 }} variant="h2" gutterBottom>
               Aged Apriori
             </Typography>
-            {loading && (
-              <Typography sx={{ mt: 4 }}>
-                Impossibile collegarsi al server
-              </Typography>
-            )}
           </Container>
-          {!loading && datasets.length > 0 && (
+          {/** INPUT FORM */}
+          {datasets.length > 0 && (
             <>
               <Container maxWidth="md" sx={{ mt: 4, mb: 4 }} component={Paper}>
+                {/** DATASET SELECTION */}
                 <Container>
                   <FormControl fullWidth sx={{ mt: 4 }}>
                     <InputLabel id="dataset-select-label">Dataset</InputLabel>
@@ -99,6 +108,8 @@ function App() {
                     Add dataset
                   </Button>
                 </Container>
+
+                {/** TABS */}
                 <Box sx={{ borderBottom: 1, borderColor: "divider", mt: 2 }}>
                   <Tabs
                     value={tabIndex}
@@ -116,6 +127,8 @@ function App() {
                   <FrequentItemsetForm
                     dataset={chosenDataset}
                     setResult={setResult}
+                    setLoading={setLoading}
+                    setError={setError}
                     expanded={result == null}
                   />
                 </TabPanel>
@@ -123,6 +136,8 @@ function App() {
                   <RulesForm
                     dataset={chosenDataset}
                     setResult={setResult}
+                    setLoading={setLoading}
+                    setError={setError}
                     expanded={result == null}
                   />
                 </TabPanel>
@@ -130,27 +145,72 @@ function App() {
                   <ValidationForm
                     dataset={chosenDataset}
                     setResult={setResult}
+                    setLoading={setLoading}
+                    setError={setError}
                     expanded={result == null}
                   />
                 </TabPanel>
               </Container>
-              {result && (
+              {result && !loading && (
                 <Container
                   sx={{ display: "flex", alignItems: "flex-start", mb: 4 }}
                 >
-                  <ResultComponent
-                    result={result}
-                  />
+                  <ResultComponent result={result} />
                 </Container>
               )}
             </>
+          )}
+
+          {/** LOADING ANIMATION */}
+          {loading && (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                mt: 4,
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          )}
+
+          {/** ERROR */}
+          {!loading && error && (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                flexDirection: "column",
+                maxWidth: "500px",
+                height: "fit-content",
+                p: 4,
+                mx: "auto",
+                my: "auto",
+              }}
+              component={Paper}
+            >
+              <Typography
+                variant="h6"
+                color="error"
+                align="center"
+                gutterBottom
+              >
+                Connection Error
+              </Typography>
+              <Typography variant="body1" align="center" gutterBottom>
+                Failed to retrieve data. Please check the server status and try
+                again.
+              </Typography>
+              <Button sx={{ mt: 2 }} variant="contained" onClick={getDatasets}>
+                Retry
+              </Button>
+            </Box>
           )}
         </Box>
       </Box>
     </ThemeProvider>
   );
 }
-
-
 
 export default App;
