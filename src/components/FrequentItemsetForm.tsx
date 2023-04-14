@@ -6,7 +6,7 @@ import {
   Button,
   Grid,
 } from "@mui/material";
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { TabFormProps } from "../types";
 import { API_CALLS } from "../config";
 
@@ -15,46 +15,101 @@ var freqItemsetColumns = [
   { label: "Support", field: "support", type: "number" },
 ];
 
+interface FrequentItemsetFormProps {
+  contextLevel: string;
+  userIndex: string;
+  temporalWindow: string;
+  minSupport: string;
+  gapsFlag: boolean;
+  aged: boolean;
+}
+
+interface FrequentItemsetFormErrorProps {
+  contextLevel: boolean;
+  userIndex: boolean;
+  temporalWindow: boolean;
+  minSupport: boolean;
+}
+
 function FrequentItemsetForm(props: TabFormProps) {
   const { dataset, getApiResult, expanded } = props;
-
-  const [contextLevel, setContextLevel] = useState<number>(0); // The context level parameter
-  const [userIndex, setUserIndex] = useState<number>(0); // The user index parameter
-  const [minSupport, setMinSupport] = useState<number>(0.35); // The minimum support parameter
-  const [tempWindow, setTempWindow] = useState<number>(3); // The temporal window parameter
-  const [gapsFlag, setGapsFlag] = useState<boolean>(false); // The gaps parameter
-  const [agedFlag, setAgedFlag] = useState<boolean>(true); // The aged parameter
+  const [formData, setFormData] = useState<FrequentItemsetFormProps>({
+    contextLevel: "0",
+    userIndex: "0",
+    temporalWindow: "3",
+    minSupport: "0.35",
+    gapsFlag: false,
+    aged: true,
+  });
+  const [formError, setFormError] = useState<FrequentItemsetFormErrorProps>({
+    contextLevel: false,
+    userIndex: false,
+    temporalWindow: false,
+    minSupport: false,
+  });
 
   var gridSize = expanded ? 6 : 2;
 
+  const validateForm = (newFormData: FrequentItemsetFormProps) => {
+    const checkCL =
+      isNaN(parseInt(newFormData.contextLevel)) ||
+      Number(newFormData.contextLevel) < 0;
+    const checkUI =
+      isNaN(parseInt(newFormData.userIndex)) ||
+      Number(newFormData.userIndex) < 0 ||
+      Number(newFormData.userIndex) >= dataset.numberOfUsers;
+    const checkTW =
+      isNaN(parseInt(newFormData.temporalWindow)) ||
+      Number(newFormData.temporalWindow) < 0;
+    const checkMS =
+      isNaN(parseInt(newFormData.minSupport)) ||
+      Number(newFormData.minSupport) <= 0 ||
+      Number(newFormData.minSupport) >= 1;
+
+    setFormError({
+      contextLevel: checkCL,
+      userIndex: checkUI,
+      temporalWindow: checkTW,
+      minSupport: checkMS,
+    });
+  };
+
   const getFrequentItemsets = () => {
-    if (!dataset) {
-      //TODO
-      return;
-    }
-    if (minSupport <= 0 || minSupport >= 1) {
-      //TODO
-      return;
-    }
+    // If one input is wrong, return
+    if (Object.values(formError).includes(true)) return;
+
     let prepareData = (data: any) =>
       data.map((item: any) => ({
         ...item,
         itemset: item.itemset.map((x: any) => x.fullName).join(", "),
       }));
 
+    const formDataAsNumber = {
+      ...formData,
+      contextLevel: Number(formData.contextLevel),
+      userIndex: Number(formData.userIndex),
+      temporalWindow: Number(formData.temporalWindow),
+      minSupport: Number(formData.minSupport),
+    };
+
     getApiResult({
       apiCallUrl: API_CALLS.getFrequentItemset,
-      apiParams: {
-        contextLevel: contextLevel,
-        userIndex: userIndex,
-        temporalWindow: tempWindow,
-        minSupport: minSupport,
-        gapsFlag: gapsFlag,
-        aged: agedFlag,
-      },
+      apiParams: formDataAsNumber,
       columns: freqItemsetColumns,
       prepareData: prepareData,
     });
+  };
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const isCheckbox = event.target.type === "checkbox";
+    const newFormData = {
+      ...formData,
+      [event.target.name]: isCheckbox
+        ? event.target.checked
+        : event.target.value,
+    };
+    validateForm(newFormData);
+    setFormData(newFormData);
   };
 
   return (
@@ -65,12 +120,15 @@ function FrequentItemsetForm(props: TabFormProps) {
             id="context-level-input"
             label="Context level"
             type="number"
-            value={contextLevel}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-              setContextLevel(Number(event.target.value))
-            }
+            name="contextLevel"
+            value={formData.contextLevel}
+            onChange={handleChange}
             variant="outlined"
             margin="normal"
+            error={formError.contextLevel}
+            helperText={
+              formError.contextLevel ? "Value between 0 and " /**  TODO*/ : ""
+            }
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -78,12 +136,17 @@ function FrequentItemsetForm(props: TabFormProps) {
             id="user-index-input"
             label="User index"
             type="number"
-            value={userIndex}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-              setUserIndex(Number(event.target.value))
-            }
+            name="userIndex"
+            value={formData.userIndex}
+            onChange={handleChange}
             variant="outlined"
             margin="normal"
+            error={formError.userIndex}
+            helperText={
+              formError.userIndex
+                ? "Value between 0 and " + (dataset.numberOfUsers - 1)
+                : ""
+            }
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -91,12 +154,15 @@ function FrequentItemsetForm(props: TabFormProps) {
             id="temp-window-input"
             label="Temporal window"
             type="number"
-            value={tempWindow}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-              setTempWindow(Number(event.target.value))
-            }
+            name="temporalWindow"
+            value={formData.temporalWindow}
+            onChange={handleChange}
             variant="outlined"
             margin="normal"
+            error={formError.temporalWindow}
+            helperText={
+              formError.temporalWindow ? "Value must be greater than 0" : ""
+            }
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -104,20 +170,22 @@ function FrequentItemsetForm(props: TabFormProps) {
             id="min-support-input"
             label="Minimum support"
             type="number"
-            value={minSupport}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-              setMinSupport(Number(event.target.value))
-            }
+            name="minSupport"
+            value={formData.minSupport}
+            onChange={handleChange}
             variant="outlined"
             margin="normal"
+            error={formError.minSupport}
+            helperText={formError.minSupport ? "Value between 0 and 1" : ""}
           />
         </Grid>
         <Grid item xs={6}>
           <FormControlLabel
             control={
               <Switch
-                checked={gapsFlag}
-                onChange={() => setGapsFlag(!gapsFlag)}
+                name="gapsFlag"
+                checked={formData.gapsFlag}
+                onChange={handleChange}
                 inputProps={{ "aria-label": "controlled" }}
               />
             }
@@ -128,8 +196,9 @@ function FrequentItemsetForm(props: TabFormProps) {
           <FormControlLabel
             control={
               <Switch
-                checked={agedFlag}
-                onChange={() => setAgedFlag(!agedFlag)}
+                name="agedFlag"
+                checked={formData.aged}
+                onChange={handleChange}
                 inputProps={{ "aria-label": "controlled" }}
               />
             }

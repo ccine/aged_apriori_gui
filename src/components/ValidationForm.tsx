@@ -6,7 +6,7 @@ import {
   Button,
   Grid,
 } from "@mui/material";
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { TabFormProps } from "../types";
 import { API_CALLS } from "../config";
 
@@ -16,47 +16,107 @@ var validationColumns = [
   { label: "Classic accuracy", field: "classicAccuracy", type: "number" },
 ];
 
+interface ValidationFormProps {
+  contextLevel: string;
+  testSize: string;
+  temporalWindow: string;
+  minSupport: string;
+  minConfidence: string;
+  feature: string;
+  gapsFlag: boolean;
+}
+
+interface ValidationFormErrorProps {
+  contextLevel: boolean;
+  testSize: boolean;
+  temporalWindow: boolean;
+  minSupport: boolean;
+  minConfidence: boolean;
+  feature: boolean;
+}
+
 function ValidationForm(props: TabFormProps) {
   const { dataset, getApiResult, expanded } = props;
-
-  const [contextLevel, setContextLevel] = useState<number>(0); // The context level parameter
-  const [testSize, setTestSize] = useState<number>(20); // The test size parameter
-  const [tempWindow, setTempWindow] = useState<number>(3); // The temporal window parameter
-  const [minSupport, setMinSupport] = useState<number>(0.3); // The minimum support parameter
-  const [minConfidence, setMinConfidence] = useState<number>(0.8); // The minimum confidence parameter
-  const [feature, setFeature] = useState<String>("ZL"); // The feature parameter
-  const [gapsFlag, setGapsFlag] = useState<boolean>(false); // The gaps parameter
+  const [formData, setFormData] = useState<ValidationFormProps>({
+    contextLevel: "0",
+    testSize: "20",
+    temporalWindow: "3",
+    minSupport: "0.05",
+    minConfidence: "0.8",
+    feature: "ZL",
+    gapsFlag: false,
+  });
+  const [formError, setFormError] = useState<ValidationFormErrorProps>({
+    contextLevel: false,
+    testSize: false,
+    temporalWindow: false,
+    minSupport: false,
+    minConfidence: false,
+    feature: false,
+  });
 
   var gridSize = expanded ? 4 : 2;
 
+  const validateForm = (newFormData: ValidationFormProps) => {
+    const checkCL =
+      isNaN(parseInt(newFormData.contextLevel)) ||
+      Number(newFormData.contextLevel) < 0;
+    const checkTS =
+      isNaN(parseInt(newFormData.testSize)) || Number(newFormData.testSize) < 0;
+    const checkTW =
+      isNaN(parseInt(newFormData.temporalWindow)) ||
+      Number(newFormData.temporalWindow) < 0;
+    const checkMS =
+      isNaN(parseInt(newFormData.minSupport)) ||
+      Number(newFormData.minSupport) <= 0 ||
+      Number(newFormData.minSupport) >= 1;
+    const checkMC =
+      isNaN(parseInt(newFormData.minConfidence)) ||
+      Number(newFormData.minConfidence) <= 0 ||
+      Number(newFormData.minConfidence) >= 1;
+    const checkF = newFormData.feature === "";
+
+    setFormError({
+      contextLevel: checkCL,
+      testSize: checkTS,
+      temporalWindow: checkTW,
+      minSupport: checkMS,
+      minConfidence: checkMC,
+      feature: checkF,
+    });
+  };
+
   const getFrequentItemsets = () => {
-    if (!dataset) {
-      //TODO
-      return;
-    }
-    if (minSupport <= 0 || minSupport >= 1) {
-      //TODO
-      return;
-    }
-    if (minConfidence <= 0 || minConfidence >= 1) {
-      //TODO
-      return;
-    }
+    // If one input is wrong, return
+    if (Object.values(formError).includes(true)) return;
+
+    const formDataAsNumber = {
+      ...formData,
+      contextLevel: Number(formData.contextLevel),
+      testSize: Number(formData.testSize),
+      temporalWindow: Number(formData.temporalWindow),
+      minSupport: Number(formData.minSupport),
+      minConfidence: Number(formData.minConfidence),
+    };
 
     getApiResult({
       apiCallUrl: API_CALLS.getValidation,
-      apiParams: {
-        contextLevel: contextLevel,
-        testSize: testSize,
-        temporalWindow: tempWindow,
-        minSupport: minSupport,
-        minConfidence: minConfidence,
-        feature: feature,
-        gapsFlag: gapsFlag,
-      },
+      apiParams: formDataAsNumber,
       columns: validationColumns,
       prepareData: (data: any) => data,
     });
+  };
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const isCheckbox = event.target.type === "checkbox";
+    const newFormData = {
+      ...formData,
+      [event.target.name]: isCheckbox
+        ? event.target.checked
+        : event.target.value,
+    };
+    validateForm(newFormData);
+    setFormData(newFormData);
   };
 
   return (
@@ -67,12 +127,15 @@ function ValidationForm(props: TabFormProps) {
             id="context-level-input"
             label="Context level"
             type="number"
-            value={contextLevel}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-              setContextLevel(Number(event.target.value))
-            }
+            name="contextLevel"
+            value={formData.contextLevel}
+            onChange={handleChange}
             variant="outlined"
             margin="normal"
+            error={formError.contextLevel}
+            helperText={
+              formError.contextLevel ? "Value between 0 and " /**  TODO*/ : ""
+            }
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -80,12 +143,15 @@ function ValidationForm(props: TabFormProps) {
             id="test-size-input"
             label="Test size"
             type="number"
-            value={testSize}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-              setTestSize(Number(event.target.value))
-            }
+            name="testSize"
+            value={formData.testSize}
+            onChange={handleChange}
             variant="outlined"
             margin="normal"
+            error={formError.testSize}
+            helperText={
+              formError.temporalWindow ? "Value must be greater than 0" : ""
+            }
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -93,12 +159,15 @@ function ValidationForm(props: TabFormProps) {
             id="temp-window-input"
             label="Temporal window"
             type="number"
-            value={tempWindow}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-              setTempWindow(Number(event.target.value))
-            }
+            name="temporalWindow"
+            value={formData.temporalWindow}
+            onChange={handleChange}
             variant="outlined"
             margin="normal"
+            error={formError.temporalWindow}
+            helperText={
+              formError.temporalWindow ? "Value must be greater than 0" : ""
+            }
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -106,12 +175,13 @@ function ValidationForm(props: TabFormProps) {
             id="min-support-input"
             label="Minimum support"
             type="number"
-            value={minSupport}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-              setMinSupport(Number(event.target.value))
-            }
+            name="minSupport"
+            value={formData.minSupport}
+            onChange={handleChange}
             variant="outlined"
             margin="normal"
+            error={formError.minSupport}
+            helperText={formError.minSupport ? "Value between 0 and 1" : ""}
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -119,12 +189,13 @@ function ValidationForm(props: TabFormProps) {
             id="min-confidence-input"
             label="Minimum confidence"
             type="number"
-            value={minConfidence}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-              setMinConfidence(Number(event.target.value))
-            }
+            name="minConfidence"
+            value={formData.minConfidence}
+            onChange={handleChange}
             variant="outlined"
             margin="normal"
+            error={formError.minConfidence}
+            helperText={formError.minSupport ? "Value between 0 and 1" : ""}
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -132,20 +203,22 @@ function ValidationForm(props: TabFormProps) {
             id="feature-input"
             label="Feature"
             type="string"
-            value={feature}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-              setFeature(event.target.value)
-            }
+            name="feature"
+            value={formData.feature}
+            onChange={handleChange}
             variant="outlined"
             margin="normal"
+            error={formError.feature}
+            helperText={formError.feature ? "Value in list" : ""}
           />
         </Grid>
         <Grid item xs={6}>
           <FormControlLabel
             control={
               <Switch
-                checked={gapsFlag}
-                onChange={() => setGapsFlag(!gapsFlag)}
+                name="gapsFlag"
+                checked={formData.gapsFlag}
+                onChange={handleChange}
                 inputProps={{ "aria-label": "controlled" }}
               />
             }
