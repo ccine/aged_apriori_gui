@@ -1,8 +1,18 @@
+export interface getApiResultProps {
+  apiCallUrl: (data: string) => string;
+  apiParams: any;
+  columns: ResultType["columns"];
+  prepareData: (rawData: any) => ResultType["data"];
+}
+
+export interface DatasetInfo {
+  name: string;
+  numberOfUsers: number;
+}
+
 export interface TabFormProps {
-  dataset: string;
-  setResult: (res: ResultType) => void;
-  setLoading: (x: boolean) => void;
-  setError: (x: boolean) => void;
+  dataset: DatasetInfo;
+  getApiResult: (props: getApiResultProps) => void;
   expanded: boolean;
 }
 

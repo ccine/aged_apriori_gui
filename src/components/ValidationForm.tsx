@@ -6,12 +6,18 @@ import {
   Button,
   Grid,
 } from "@mui/material";
-import axios from "axios";
 import { useState } from "react";
 import { TabFormProps } from "../types";
+import { API_CALLS } from "../config";
+
+var validationColumns = [
+  { label: "User", field: "user", type: "string" },
+  { label: "Aged accuracy", field: "agedAccuracy", type: "number" },
+  { label: "Classic accuracy", field: "classicAccuracy", type: "number" },
+];
 
 function ValidationForm(props: TabFormProps) {
-  const { dataset, setResult, setLoading, setError, expanded } = props;
+  const { dataset, getApiResult, expanded } = props;
 
   const [contextLevel, setContextLevel] = useState<number>(0); // The context level parameter
   const [testSize, setTestSize] = useState<number>(20); // The test size parameter
@@ -36,26 +42,21 @@ function ValidationForm(props: TabFormProps) {
       //TODO
       return;
     }
-    axios
-      .get("http://127.0.0.1:8080/aged-apriori/validation/" + dataset, {
-        params: {
-          contextLevel: contextLevel,
-          testSize: testSize,
-          temporalWindow: tempWindow,
-          minSupport: minSupport,
-          minConfidence: minConfidence,
-          feature: feature,
-          gapsFlag: gapsFlag,
-        },
-      })
-      .then((response) => {
-        console.log(response.data);
-      })
-      .catch((error) => {
-        console.error(error);
-        setError(true);
-        setLoading(false);
-      });
+
+    getApiResult({
+      apiCallUrl: API_CALLS.getValidation,
+      apiParams: {
+        contextLevel: contextLevel,
+        testSize: testSize,
+        temporalWindow: tempWindow,
+        minSupport: minSupport,
+        minConfidence: minConfidence,
+        feature: feature,
+        gapsFlag: gapsFlag,
+      },
+      columns: validationColumns,
+      prepareData: (data: any) => data,
+    });
   };
 
   return (

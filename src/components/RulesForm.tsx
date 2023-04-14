@@ -6,9 +6,9 @@ import {
   Button,
   Grid,
 } from "@mui/material";
-import axios from "axios";
 import { useState } from "react";
 import { TabFormProps } from "../types";
+import { API_CALLS } from "../config";
 
 var rulesColumns = [
   { label: "Antecedent", field: "antecedent", type: "string" },
@@ -19,7 +19,7 @@ var rulesColumns = [
 ];
 
 function RulesForm(props: TabFormProps) {
-  const { dataset, setResult, setLoading, setError, expanded } = props;
+  const { dataset, getApiResult, expanded } = props;
 
   const [contextLevel, setContextLevel] = useState<number>(0); // The context level parameter
   const [userIndex, setUserIndex] = useState<number>(0); // The user index parameter
@@ -44,37 +44,28 @@ function RulesForm(props: TabFormProps) {
     if (minConfidence <= 0 || minConfidence >= 1) {
       //TODO
       return;
-    }
-    setLoading(true);
-    axios
-      .get("http://127.0.0.1:8080/aged-apriori/rules/" + dataset, {
-        params: {
-          contextLevel: contextLevel,
-          userIndex: userIndex,
-          temporalWindow: tempWindow,
-          minSupport: minSupport,
-          minConfidence: minConfidence,
-          feature: feature,
-          gapsFlag: gapsFlag,
-          aged: agedFlag,
-        },
-      })
-      .then((response) => {
-        let prepareData = response.data.map((item: any) => ({
-          ...item,
-          antecedent: item.antecedent
-            .map((ant: any) => ant.fullName)
-            .join(", "),
-          consequent: item.consequent.fullName,
-        }));
-        setResult({ columns: rulesColumns, data: prepareData });
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error(error);
-        setError(true);
-        setLoading(false);
-      });
+    let prepareData = (data: any) =>
+      data.map((item: any) => ({
+        ...item,
+        antecedent: item.antecedent.map((ant: any) => ant.fullName).join(", "),
+        consequent: item.consequent.fullName,
+      }));
+
+    getApiResult({
+      apiCallUrl: API_CALLS.getRules,
+      apiParams: {
+        contextLevel: contextLevel,
+        userIndex: userIndex,
+        temporalWindow: tempWindow,
+        minSupport: minSupport,
+        minConfidence: minConfidence,
+        feature: feature,
+        gapsFlag: gapsFlag,
+        aged: agedFlag,
+      },
+      columns: rulesColumns,
+      prepareData: prepareData,
+    });
   };
 
   return (

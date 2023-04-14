@@ -1,6 +1,45 @@
-# Getting Started with Create React App
+# Aged Apriori GUI
+Brief project description.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Prerequisites
+
+Before you begin, make sure you have installed:
+
+- [Node.js](https://nodejs.org/) v10 or later
+- The Java API must be started and running. See [this repository](https://github.com/SwagBeota/aged_apriori_java).
+
+## Installation
+
+1. Clone the repository
+
+   ```sh
+   git clone https://github.com/ccine/nomeprogetto.git
+   ```
+<br/>
+
+2. Navigate to the project directory
+
+   ```sh
+   cd nomeprogetto
+   ```
+<br/>
+
+3. Install dependencies
+
+   ```sh
+   npm install
+   ```
+
+## Usage
+
+1. Start the application
+
+   ```sh
+   npm start
+   ```
+<br/>
+
+2. Open your browser and go to [http://127.0.0.1:3000](http://127.0.0.1:3000) to view the application.
 
 ## Available Scripts
 
@@ -9,7 +48,7 @@ In the project directory, you can run:
 ### `npm start`
 
 Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Open [http://127.0.0.1:3000](http://127.0.0.1:3000) to view it in the browser.
 
 The page will reload if you make edits.\
 You will also see any lint errors in the console.
@@ -39,8 +78,6 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
 
-## Learn More
+## License
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+Distributed under the MIT license. See the [LICENSE](LICENSE) file for more information.

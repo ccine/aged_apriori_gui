@@ -6,9 +6,9 @@ import {
   Button,
   Grid,
 } from "@mui/material";
-import axios from "axios";
 import { useState } from "react";
 import { TabFormProps } from "../types";
+import { API_CALLS } from "../config";
 
 var freqItemsetColumns = [
   { label: "Itemset", field: "itemset", type: "string" },
@@ -16,7 +16,7 @@ var freqItemsetColumns = [
 ];
 
 function FrequentItemsetForm(props: TabFormProps) {
-  const { dataset, setResult, setLoading, setError, expanded } = props;
+  const { dataset, getApiResult, expanded } = props;
 
   const [contextLevel, setContextLevel] = useState<number>(0); // The context level parameter
   const [userIndex, setUserIndex] = useState<number>(0); // The user index parameter
@@ -36,31 +36,25 @@ function FrequentItemsetForm(props: TabFormProps) {
       //TODO
       return;
     }
-    setLoading(true);
-    axios
-      .get("http://127.0.0.1:8080/aged-apriori/frequent-itemsets/" + dataset, {
-        params: {
-          contextLevel: contextLevel,
-          userIndex: userIndex,
-          temporalWindow: tempWindow,
-          minSupport: minSupport,
-          gapsFlag: gapsFlag,
-          aged: agedFlag,
-        },
-      })
-      .then((response) => {
-        let prepareData = response.data.map((item: any) => ({
-          ...item,
-          itemset: item.itemset.map((x: any) => x.fullName).join(", "),
-        }));
-        setResult({ columns: freqItemsetColumns, data: prepareData });
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error(error);
-        setError(true);
-        setLoading(false);
-      });
+    let prepareData = (data: any) =>
+      data.map((item: any) => ({
+        ...item,
+        itemset: item.itemset.map((x: any) => x.fullName).join(", "),
+      }));
+
+    getApiResult({
+      apiCallUrl: API_CALLS.getFrequentItemset,
+      apiParams: {
+        contextLevel: contextLevel,
+        userIndex: userIndex,
+        temporalWindow: tempWindow,
+        minSupport: minSupport,
+        gapsFlag: gapsFlag,
+        aged: agedFlag,
+      },
+      columns: freqItemsetColumns,
+      prepareData: prepareData,
+    });
   };
 
   return (

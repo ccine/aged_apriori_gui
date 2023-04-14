@@ -23,28 +23,29 @@ import RulesForm from "./components/RulesForm";
 import ValidationForm from "./components/ValidationForm";
 import ResultComponent from "./components/ResultComponent";
 import { a11yProps, TabPanel } from "./components/TabFunction";
-import { ResultType } from "./types";
+import { DatasetInfo, ResultType, getApiResultProps } from "./types";
+import { API_CALLS } from "./config";
 
 function App() {
   const [loading, setLoading] = useState(false);
-  const [datasets, setDatasets] = useState<
-    { name: string; numberOfUsers: number }[]
-  >([]);
-  const [chosenDataset, setChosenDataset] = useState<string>("");
+  const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
+  const [chosenDataset, setChosenDataset] = useState<DatasetInfo>();
   const [tabIndex, setTabIndex] = useState<number>(0);
   const [result, setResult] = useState<ResultType>();
   const [error, setError] = useState<boolean>(false);
 
   const mdTheme = createTheme();
 
-  function getDatasets() {
-    setError(false);
+  const getResultFromServer = (props: getApiResultProps) => {
+    const { apiCallUrl, apiParams, columns, prepareData } = props;
+
     setLoading(true);
     axios
-      .get("http://127.0.0.1:8080/aged-apriori/datasets")
+      .get(apiCallUrl(chosenDataset!.name), {
+        params: apiParams,
+      })
       .then((response) => {
-        setDatasets(response.data);
-        setChosenDataset(response.data[0].name);
+        setResult({ columns: columns, data: prepareData(response.data) });
         setLoading(false);
       })
       .catch((error) => {
@@ -52,7 +53,24 @@ function App() {
         setError(true);
         setLoading(false);
       });
-  }
+  };
+
+  const getDatasets = () => {
+    setError(false);
+    setLoading(true);
+    axios
+      .get(API_CALLS.getDatasets)
+      .then((response: { data: DatasetInfo[] }) => {
+        setDatasets(response.data);
+        setChosenDataset(response.data[0]);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error(error);
+        setError(true);
+        setLoading(false);
+      });
+  };
 
   useEffect(() => {
     getDatasets();
@@ -80,7 +98,7 @@ function App() {
             </Typography>
           </Container>
           {/** INPUT FORM */}
-          {datasets.length > 0 && (
+          {datasets.length > 0 && chosenDataset && (
             <>
               <Container maxWidth="md" sx={{ mt: 4, mb: 4 }} component={Paper}>
                 {/** DATASET SELECTION */}
@@ -90,10 +108,10 @@ function App() {
                     <Select
                       labelId="dataset-select-label"
                       id="dataset-select"
-                      value={chosenDataset}
+                      value={chosenDataset.name}
                       label="Dataset"
                       onChange={(event: SelectChangeEvent) =>
-                        setChosenDataset(event.target.value as string)
+                        setChosenDataset(datasets.find(({ name }) => name === (event.target.value as string)))
                       }
                     >
                       {datasets.map((item, index) => (
@@ -126,27 +144,21 @@ function App() {
                 <TabPanel value={tabIndex} index={0}>
                   <FrequentItemsetForm
                     dataset={chosenDataset}
-                    setResult={setResult}
-                    setLoading={setLoading}
-                    setError={setError}
+                    getApiResult={getResultFromServer}
                     expanded={result == null}
                   />
                 </TabPanel>
                 <TabPanel value={tabIndex} index={1}>
                   <RulesForm
                     dataset={chosenDataset}
-                    setResult={setResult}
-                    setLoading={setLoading}
-                    setError={setError}
+                    getApiResult={getResultFromServer}
                     expanded={result == null}
                   />
                 </TabPanel>
                 <TabPanel value={tabIndex} index={2}>
                   <ValidationForm
                     dataset={chosenDataset}
-                    setResult={setResult}
-                    setLoading={setLoading}
-                    setError={setError}
+                    getApiResult={getResultFromServer}
                     expanded={result == null}
                   />
                 </TabPanel>
