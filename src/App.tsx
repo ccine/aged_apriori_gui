@@ -11,6 +11,7 @@ import {
   Paper,
   Select,
   SelectChangeEvent,
+  Stack,
   Tab,
   Tabs,
   ThemeProvider,
@@ -102,8 +103,11 @@ function App() {
             <>
               <Container maxWidth="md" sx={{ mt: 4, mb: 4 }} component={Paper}>
                 {/** DATASET SELECTION */}
-                <Container>
-                  <FormControl fullWidth sx={{ mt: 4 }}>
+                <Stack
+                  alignItems="start"
+                  sx={{ pt: 4 }}
+                >
+                  <FormControl fullWidth>
                     <InputLabel id="dataset-select-label">Dataset</InputLabel>
                     <Select
                       labelId="dataset-select-label"
@@ -111,7 +115,12 @@ function App() {
                       value={chosenDataset.name}
                       label="Dataset"
                       onChange={(event: SelectChangeEvent) =>
-                        setChosenDataset(datasets.find(({ name }) => name === (event.target.value as string)))
+                        setChosenDataset(
+                          datasets.find(
+                            ({ name }) =>
+                              name === (event.target.value as string)
+                          )
+                        )
                       }
                     >
                       {datasets.map((item, index) => (
@@ -123,10 +132,11 @@ function App() {
                     </Select>
                   </FormControl>
                   <Button variant="text" color="primary" size="large">
-                    Add dataset
+                    Add new dataset
                   </Button>
-                </Container>
-
+                  {/*<Divider orientation="vertical" flexItem />
+                    <FileUpload />*/}
+                </Stack>
                 {/** TABS */}
                 <Box sx={{ borderBottom: 1, borderColor: "divider", mt: 2 }}>
                   <Tabs

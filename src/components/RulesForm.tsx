@@ -5,6 +5,7 @@ import {
   Switch,
   Button,
   Grid,
+  MenuItem,
 } from "@mui/material";
 import { ChangeEvent, useState } from "react";
 import { TabFormProps } from "../types";
@@ -68,7 +69,7 @@ function RulesForm(props: TabFormProps) {
     const checkUI =
       isNaN(parseInt(newFormData.userIndex)) ||
       Number(newFormData.userIndex) < 0 ||
-      Number(newFormData.userIndex) >= dataset.numberOfUsers;
+      Number(newFormData.userIndex) >= dataset.userList.length;
     const checkTW =
       isNaN(parseInt(newFormData.temporalWindow)) ||
       Number(newFormData.temporalWindow) < 0;
@@ -153,21 +154,21 @@ function RulesForm(props: TabFormProps) {
         </Grid>
         <Grid item xs={gridSize}>
           <TextField
-            id="user-index-input"
-            name="userIndex"
-            label="User index"
-            type="number"
-            value={formData.userIndex}
-            onChange={handleChange}
+            id="user-select"
+            select
             variant="outlined"
             margin="normal"
-            error={formError.userIndex}
-            helperText={
-              formError.userIndex
-                ? "Value between 0 and " + (dataset.numberOfUsers - 1)
-                : ""
-            }
-          />
+            name="userIndex"
+            label="User"
+            value={formData.userIndex}
+            onChange={handleChange}
+          >
+            {dataset.userList.map((item, index) => (
+              <MenuItem value={index} key={index}>
+                {item}
+              </MenuItem>
+            ))}
+          </TextField>
         </Grid>
         <Grid item xs={gridSize}>
           <TextField

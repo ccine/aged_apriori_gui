@@ -12,7 +12,11 @@ import { API_CALLS } from "../config";
 
 var validationColumns = [
   { label: "User", field: "user", type: "string" },
+  { label: "Aged Rules Number", field: "agedRulesNumber", type: "number" },
+  { label: "Aged Matched", field: "agedMatched", type: "number" },
   { label: "Aged accuracy", field: "agedAccuracy", type: "number" },
+  { label: "Classic Rules Number", field: "classicRulesNumber", type: "number" },
+  { label: "Classic Matched", field: "classicMatched", type: "number" },
   { label: "Classic accuracy", field: "classicAccuracy", type: "number" },
 ];
 
