@@ -113,6 +113,7 @@ function ResultComponent(props: {
                     type={column.type}
                     variant="outlined"
                     margin="normal"
+                    key={index}
                     value={filters[column.field] || ""}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                       setFilters({
@@ -141,7 +142,7 @@ function ResultComponent(props: {
               id="tableTitle"
               component="div"
             >
-              Results
+              Results - {filteredData.length} rows
             </Typography>
             <Tooltip title="Download CSV">
               <IconButton onClick={handleDownloadCsv}>
