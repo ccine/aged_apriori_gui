@@ -1,5 +1,6 @@
 # Aged Apriori GUI
-Brief project description.
+
+The React project is a graphical user interface that allows users to run the aged Apriori algorithm on certain datasets. Users can add datasets and run the algorithm to find frequent itemsets, generate rules, and validate the rules against the classic Apriori.
 
 ## Prerequisites
 
@@ -15,14 +16,16 @@ Before you begin, make sure you have installed:
    ```sh
    git clone https://github.com/ccine/nomeprogetto.git
    ```
-<br/>
+
+   <br/>
 
 2. Navigate to the project directory
 
    ```sh
    cd nomeprogetto
    ```
-<br/>
+
+   <br/>
 
 3. Install dependencies
 
@@ -37,7 +40,8 @@ Before you begin, make sure you have installed:
    ```sh
    npm start
    ```
-<br/>
+
+   <br/>
 
 2. Open your browser and go to [http://127.0.0.1:3000](http://127.0.0.1:3000) to view the application.
 
