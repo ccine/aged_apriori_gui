@@ -1,4 +1,4 @@
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -11,6 +11,7 @@ import {
   OutlinedInput,
   Paper,
   Select,
+  Stack,
   TextField,
   ThemeProvider,
   Typography,
@@ -18,64 +19,94 @@ import {
 } from "@mui/material";
 import { MuiFileInput } from "mui-file-input";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { API_CALLS } from "../config";
+import Papa from "papaparse";
 
 function AddDataset() {
   const [file, setFile] = useState<File | null>(null);
-  const [fileContent, setFileContent] = useState<string>("");
+  const [columns, setColumns] = useState<string[]>([]);
   const [fileError, setFileError] = useState<string>();
+  const [nameError, setNameError] = useState<boolean>(true);
+  const [successUpload, setSuccessUpload] = useState<boolean>(false);
   const [datasetInfo, setDatasetInfo] = useState<{
     name: string;
     userIndex: number;
-    contextIndexes: number[];
-  }>({ name: "", userIndex: 0, contextIndexes: [] });
+    contextCols: string[];
+  }>({ name: "", userIndex: 0, contextCols: [] });
 
   const handleChangeFile = (newValue: File | null) => {
     setFile(newValue);
+    setSuccessUpload(false);
+    setColumns([]);
     if (!newValue) {
-      setFileContent("");
       setFileError("");
       return;
     }
     if (!newValue.name.endsWith(".csv")) {
-      setFileContent("");
       setFileError("The file must be a .csv");
       return;
     }
     if (newValue) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        setFileContent(content);
-      };
-      reader.readAsText(newValue);
+      // Parse local CSV file
+      Papa.parse(newValue, {
+        preview: 1,
+        complete: function (results: { data: string[][] }) {
+          setColumns(results.data[0]);
+        },
+      });
     }
   };
 
   const handleChangeForm = (event: ChangeEvent<HTMLInputElement>) => {
+    // Handle new value
     const newFormData = {
       ...datasetInfo,
       [event.target.name]: event.target.value,
     };
-    setDatasetInfo(newFormData);
+    // Remove user column from available context columns
+    const removeFromContext = {
+      ...newFormData,
+      contextCols: newFormData.contextCols.filter(
+        (value) => value !== columns[newFormData.userIndex]
+      ),
+    };
+    setDatasetInfo(removeFromContext);
+    setNameError(newFormData.name === "");
   };
-
-  const parseFirstRow = (): string[] | undefined => {
-    const rows = fileContent.trim().split(/\r?\n/);
-    if (rows.length === 0 || !rows[0] || rows[0].split(",").length === 0) {
-      //setFileError("Unable to parse first row of file")
-      return undefined;
-    }
-    return rows[0].split(",");
-  };
-  const columns = parseFirstRow();
 
   const mdTheme = createTheme();
 
   const navigate = useNavigate();
 
   const sendDataset = (): void => {
-    //navigate("/");
-    console.log(datasetInfo);
+    setFileError("");
+    setSuccessUpload(false);
+    if (!file || !columns) {
+      setFileError("File Error");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("name", datasetInfo.name);
+    formData.append("userIndex", String(datasetInfo.userIndex));
+    formData.append("file", file);
+    formData.append("contextCols", JSON.stringify(datasetInfo.contextCols));
+
+    axios
+      .post(API_CALLS.sendDataset, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      .then((response) => {
+        if (response.data === "Uploaded") setSuccessUpload(true);
+      })
+      .catch((error) => {
+        console.error(error);
+        if (typeof error.response.data === "string")
+          setFileError(error.response.data);
+        else setFileError("Server Error");
+      });
   };
 
   return (
@@ -111,7 +142,8 @@ function AddDataset() {
               onChange={handleChangeFile}
               placeholder="Add new dataset"
             />
-            {fileContent && columns && (
+            <br />
+            {columns.length > 0 ? (
               <Box sx={{ borderTop: 1, borderColor: "divider", mt: 2 }}>
                 <Grid container spacing={2} sx={{ mt: 1 }}>
                   <Grid item xs={6}>
@@ -125,6 +157,8 @@ function AddDataset() {
                       onChange={handleChangeForm}
                       variant="outlined"
                       margin="normal"
+                      error={nameError}
+                      helperText={nameError ? "Name is required" : ""}
                     />
                   </Grid>
                   <Grid item xs={6}>
@@ -149,15 +183,13 @@ function AddDataset() {
                   <Grid item xs={6}>
                     <Typography>Select the context columns:</Typography>
                     <FormControl sx={{ m: 1, width: 300 }}>
-                      <InputLabel id="context-label">
-                        Context
-                      </InputLabel>
+                      <InputLabel id="context-label">Context</InputLabel>
                       <Select
                         labelId="context-label"
                         id="context-multiple-select"
                         multiple
-                        value={datasetInfo.contextIndexes}
-                        name="contextIndexes"
+                        value={datasetInfo.contextCols}
+                        name="contextCols"
                         onChange={(e) => {
                           const newFormData = {
                             ...datasetInfo,
@@ -168,7 +200,11 @@ function AddDataset() {
                         input={<OutlinedInput label="Context" />}
                       >
                         {columns.map((name, index) => (
-                          <MenuItem key={index} value={index}>
+                          <MenuItem
+                            key={index}
+                            value={name}
+                            disabled={index === datasetInfo.userIndex}
+                          >
                             {name}
                           </MenuItem>
                         ))}
@@ -176,21 +212,46 @@ function AddDataset() {
                     </FormControl>
                   </Grid>
                   <Grid item xs={12}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      size="large"
-                      onClick={sendDataset}
-                    >
-                      Add dataset
-                    </Button>
+                    <Stack direction="row" spacing={2}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="large"
+                        onClick={sendDataset}
+                      >
+                        Add dataset
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        size="large"
+                        onClick={() => navigate("/")}
+                      >
+                        Go back
+                      </Button>
+                    </Stack>
                   </Grid>
                 </Grid>
               </Box>
+            ) : (
+              <Button
+                variant="outlined"
+                color="primary"
+                size="large"
+                sx={{ mt: 2 }}
+                onClick={() => navigate("/")}
+              >
+                Go back
+              </Button>
             )}
             {fileError && (
               <Box sx={{ mt: 2 }}>
                 <Typography color="error">Error: {fileError}</Typography>
+              </Box>
+            )}
+            {successUpload && (
+              <Box sx={{ mt: 2 }}>
+                <Typography color="green">Dataset uploaded</Typography>
               </Box>
             )}
           </Container>

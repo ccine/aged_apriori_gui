@@ -6,6 +6,10 @@ import {
   Button,
   Grid,
   MenuItem,
+  FormControl,
+  InputLabel,
+  OutlinedInput,
+  Select,
 } from "@mui/material";
 import { ChangeEvent, useState } from "react";
 import { TabFormProps } from "../types";
@@ -20,7 +24,7 @@ var rulesColumns = [
 ];
 
 interface RulesFormProps {
-  contextLevel: string;
+  contextCols: string[];
   userIndex: string;
   temporalWindow: string;
   minSupport: string;
@@ -31,7 +35,7 @@ interface RulesFormProps {
 }
 
 interface RulesFormErrorProps {
-  contextLevel: boolean;
+  contextCols: boolean;
   userIndex: boolean;
   temporalWindow: boolean;
   minSupport: boolean;
@@ -42,7 +46,7 @@ interface RulesFormErrorProps {
 function RulesForm(props: TabFormProps) {
   const { dataset, getApiResult, expanded } = props;
   const [formData, setFormData] = useState<RulesFormProps>({
-    contextLevel: "0",
+    contextCols: [],
     userIndex: "0",
     temporalWindow: "3",
     minSupport: "0.05",
@@ -52,7 +56,7 @@ function RulesForm(props: TabFormProps) {
     aged: true,
   });
   const [formError, setFormError] = useState<RulesFormErrorProps>({
-    contextLevel: false,
+    contextCols: false,
     userIndex: false,
     temporalWindow: false,
     minSupport: false,
@@ -63,9 +67,9 @@ function RulesForm(props: TabFormProps) {
   var gridSize = expanded ? 4 : 2;
 
   const validateForm = (newFormData: RulesFormProps) => {
-    const checkCL =
-      isNaN(parseInt(newFormData.contextLevel)) ||
-      Number(newFormData.contextLevel) < 0;
+    const checkCC = !formData.contextCols.every((elem) =>
+      dataset.contextCols.includes(elem)
+    );
     const checkUI =
       isNaN(parseInt(newFormData.userIndex)) ||
       Number(newFormData.userIndex) < 0 ||
@@ -84,7 +88,7 @@ function RulesForm(props: TabFormProps) {
     const checkF = newFormData.feature === "";
 
     setFormError({
-      contextLevel: checkCL,
+      contextCols: checkCC,
       userIndex: checkUI,
       temporalWindow: checkTW,
       minSupport: checkMS,
@@ -93,7 +97,7 @@ function RulesForm(props: TabFormProps) {
     });
   };
 
-  const getFrequentItemsets = () => {
+  const getRules = () => {
     // If one input is wrong, return
     if (Object.values(formError).includes(true)) return;
 
@@ -106,7 +110,6 @@ function RulesForm(props: TabFormProps) {
 
     const formDataAsNumber = {
       ...formData,
-      contextLevel: Number(formData.contextLevel),
       userIndex: Number(formData.userIndex),
       temporalWindow: Number(formData.temporalWindow),
       minSupport: Number(formData.minSupport),
@@ -135,22 +138,34 @@ function RulesForm(props: TabFormProps) {
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
-      <Grid container spacing={2}>
+      <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 4 }} alignItems="end">
         <Grid item xs={gridSize}>
-          <TextField
-            id="context-level-input"
-            label="Context level"
-            type="number"
-            name="contextLevel"
-            value={formData.contextLevel}
-            onChange={handleChange}
-            variant="outlined"
-            margin="normal"
-            error={formError.contextLevel}
-            helperText={
-              formError.contextLevel ? "Value between 0 and " /**  TODO*/ : ""
-            }
-          />
+        <FormControl sx={{ mb: 1 }} fullWidth>
+            <InputLabel id="context-label">Context</InputLabel>
+            <Select
+              labelId="context-label"
+              id="context-multiple-select"
+              multiple
+              value={formData.contextCols}
+              name="contextCols"
+              disabled={!dataset.contextCols}
+              onChange={(e) => {
+                const newFormData = {
+                  ...formData,
+                  [e.target.name]: e.target.value,
+                };
+                setFormData(newFormData);
+              }}
+              input={<OutlinedInput label="Context" />}
+            >
+              {dataset.contextCols &&
+                dataset.contextCols.map((name, index) => (
+                  <MenuItem key={index} value={name}>
+                    {name}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
         </Grid>
         <Grid item xs={gridSize}>
           <TextField
@@ -162,6 +177,7 @@ function RulesForm(props: TabFormProps) {
             label="User"
             value={formData.userIndex}
             onChange={handleChange}
+            fullWidth
           >
             {dataset.userList.map((item, index) => (
               <MenuItem value={index} key={index}>
@@ -184,6 +200,7 @@ function RulesForm(props: TabFormProps) {
             helperText={
               formError.temporalWindow ? "Value must be greater than 0" : ""
             }
+            fullWidth
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -198,6 +215,7 @@ function RulesForm(props: TabFormProps) {
             margin="normal"
             error={formError.minSupport}
             helperText={formError.minSupport ? "Value between 0 and 1" : ""}
+            fullWidth
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -212,6 +230,7 @@ function RulesForm(props: TabFormProps) {
             margin="normal"
             error={formError.minConfidence}
             helperText={formError.minConfidence ? "Value between 0 and 1" : ""}
+            fullWidth
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -226,6 +245,7 @@ function RulesForm(props: TabFormProps) {
             margin="normal"
             error={formError.feature}
             helperText={formError.feature ? "Value in list" : ""}
+            fullWidth
           />
         </Grid>
         <Grid item xs={6}>
@@ -257,7 +277,7 @@ function RulesForm(props: TabFormProps) {
         <Grid item xs={12}>
           <Button
             variant="contained"
-            onClick={getFrequentItemsets}
+            onClick={getRules}
             color="primary"
             size="large"
           >

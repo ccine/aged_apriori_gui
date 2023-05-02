@@ -5,6 +5,11 @@ import {
   Switch,
   Button,
   Grid,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  OutlinedInput,
+  Select,
 } from "@mui/material";
 import { ChangeEvent, useState } from "react";
 import { TabFormProps } from "../types";
@@ -21,7 +26,7 @@ var validationColumns = [
 ];
 
 interface ValidationFormProps {
-  contextLevel: string;
+  contextCols: string[];
   testSize: string;
   temporalWindow: string;
   minSupport: string;
@@ -31,7 +36,7 @@ interface ValidationFormProps {
 }
 
 interface ValidationFormErrorProps {
-  contextLevel: boolean;
+  contextCols: boolean;
   testSize: boolean;
   temporalWindow: boolean;
   minSupport: boolean;
@@ -42,7 +47,7 @@ interface ValidationFormErrorProps {
 function ValidationForm(props: TabFormProps) {
   const { dataset, getApiResult, expanded } = props;
   const [formData, setFormData] = useState<ValidationFormProps>({
-    contextLevel: "0",
+    contextCols: [],
     testSize: "20",
     temporalWindow: "3",
     minSupport: "0.05",
@@ -51,7 +56,7 @@ function ValidationForm(props: TabFormProps) {
     gapsFlag: false,
   });
   const [formError, setFormError] = useState<ValidationFormErrorProps>({
-    contextLevel: false,
+    contextCols: false,
     testSize: false,
     temporalWindow: false,
     minSupport: false,
@@ -62,9 +67,9 @@ function ValidationForm(props: TabFormProps) {
   var gridSize = expanded ? 4 : 2;
 
   const validateForm = (newFormData: ValidationFormProps) => {
-    const checkCL =
-      isNaN(parseInt(newFormData.contextLevel)) ||
-      Number(newFormData.contextLevel) < 0;
+    const checkCC = !formData.contextCols.every((elem) =>
+      dataset.contextCols.includes(elem)
+    );
     const checkTS =
       isNaN(parseInt(newFormData.testSize)) || Number(newFormData.testSize) < 0;
     const checkTW =
@@ -81,7 +86,7 @@ function ValidationForm(props: TabFormProps) {
     const checkF = newFormData.feature === "";
 
     setFormError({
-      contextLevel: checkCL,
+      contextCols: checkCC,
       testSize: checkTS,
       temporalWindow: checkTW,
       minSupport: checkMS,
@@ -96,7 +101,6 @@ function ValidationForm(props: TabFormProps) {
 
     const formDataAsNumber = {
       ...formData,
-      contextLevel: Number(formData.contextLevel),
       testSize: Number(formData.testSize),
       temporalWindow: Number(formData.temporalWindow),
       minSupport: Number(formData.minSupport),
@@ -125,22 +129,34 @@ function ValidationForm(props: TabFormProps) {
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
-      <Grid container spacing={2}>
+      <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 4 }} alignItems="end">
         <Grid item xs={gridSize}>
-          <TextField
-            id="context-level-input"
-            label="Context level"
-            type="number"
-            name="contextLevel"
-            value={formData.contextLevel}
-            onChange={handleChange}
-            variant="outlined"
-            margin="normal"
-            error={formError.contextLevel}
-            helperText={
-              formError.contextLevel ? "Value between 0 and " /**  TODO*/ : ""
-            }
-          />
+        <FormControl sx={{ mb: 1 }} fullWidth>
+            <InputLabel id="context-label">Context</InputLabel>
+            <Select
+              labelId="context-label"
+              id="context-multiple-select"
+              multiple
+              value={formData.contextCols}
+              name="contextCols"
+              disabled={!dataset.contextCols}
+              onChange={(e) => {
+                const newFormData = {
+                  ...formData,
+                  [e.target.name]: e.target.value,
+                };
+                setFormData(newFormData);
+              }}
+              input={<OutlinedInput label="Context" />}
+            >
+              {dataset.contextCols &&
+                dataset.contextCols.map((name, index) => (
+                  <MenuItem key={index} value={name}>
+                    {name}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
         </Grid>
         <Grid item xs={gridSize}>
           <TextField
@@ -156,6 +172,7 @@ function ValidationForm(props: TabFormProps) {
             helperText={
               formError.temporalWindow ? "Value must be greater than 0" : ""
             }
+            fullWidth
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -172,6 +189,7 @@ function ValidationForm(props: TabFormProps) {
             helperText={
               formError.temporalWindow ? "Value must be greater than 0" : ""
             }
+            fullWidth
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -186,6 +204,7 @@ function ValidationForm(props: TabFormProps) {
             margin="normal"
             error={formError.minSupport}
             helperText={formError.minSupport ? "Value between 0 and 1" : ""}
+            fullWidth
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -200,6 +219,7 @@ function ValidationForm(props: TabFormProps) {
             margin="normal"
             error={formError.minConfidence}
             helperText={formError.minSupport ? "Value between 0 and 1" : ""}
+            fullWidth
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -214,6 +234,7 @@ function ValidationForm(props: TabFormProps) {
             margin="normal"
             error={formError.feature}
             helperText={formError.feature ? "Value in list" : ""}
+            fullWidth
           />
         </Grid>
         <Grid item xs={6}>

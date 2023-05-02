@@ -22,7 +22,9 @@ import {
 } from "@mui/material";
 import TablePaginationActions from "./TablePaginationActions";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import DownloadIcon from "@mui/icons-material/Download";
 import { visuallyHidden } from "@mui/utils";
+import Papa from "papaparse"
 
 const DEFAULT_ORDER = "asc";
 const DEFAULT_ROWS_PER_PAGE = 10;
@@ -52,7 +54,7 @@ function ResultComponent(props: {
   }, [props.result]);
 
   useEffect(() => {
-    // filtra i dati in base ai filtri selezionati
+    // Filter data
     const filtered = props.result.data.filter((item) => {
       let passFilter = true;
       for (const [key, value] of Object.entries(filters)) {
@@ -80,6 +82,19 @@ function ResultComponent(props: {
     },
     [filteredData, order, orderByIndex, props.result.columns]
   );
+
+  function handleDownloadCsv() {
+    const csv = Papa.unparse(props.result.data);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'data.csv');
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
   return (
     <Grid container spacing={2}>
@@ -120,23 +135,25 @@ function ResultComponent(props: {
               pr: { xs: 1, sm: 1 },
             }}
           >
-            {
-              <Typography
-                sx={{ flex: "1 1 100%" }}
-                variant="h6"
-                id="tableTitle"
-                component="div"
-              >
-                Results
-              </Typography>
-            }
-            {
-              <Tooltip title="Filter list">
-                <IconButton onClick={() => setShowFilters(!showFilters)}>
-                  <FilterListIcon />
-                </IconButton>
-              </Tooltip>
-            }
+            <Typography
+              sx={{ flex: "1 1 100%" }}
+              variant="h6"
+              id="tableTitle"
+              component="div"
+            >
+              Results
+            </Typography>
+            <Tooltip title="Download CSV">
+              <IconButton onClick={handleDownloadCsv}>
+                <DownloadIcon />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Filter list">
+              <IconButton onClick={() => setShowFilters(!showFilters)}>
+                <FilterListIcon />
+              </IconButton>
+            </Tooltip>
           </Toolbar>
           <TableContainer>
             <Table size="small">
@@ -167,7 +184,6 @@ function ResultComponent(props: {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {/* elenco di righe di dati dinamiche in base ai dati filtrati */}
                 {(rowsPerPage > 0
                   ? filteredData.slice(
                       page * rowsPerPage,

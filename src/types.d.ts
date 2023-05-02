@@ -8,6 +8,7 @@ export interface getApiResultProps {
 export interface DatasetInfo {
   name: string;
   userList: string[];
+  contextCols: string[];
 }
 
 export interface TabFormProps {

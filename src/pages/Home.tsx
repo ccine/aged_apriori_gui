@@ -65,6 +65,7 @@ function Home() {
       .get(API_CALLS.getDatasets)
       .then((response: { data: DatasetInfo[] }) => {
         setDatasets(response.data);
+        console.log(response.data)
         setChosenDataset(response.data[0]);
         setLoading(false);
       })

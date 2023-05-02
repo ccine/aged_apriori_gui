@@ -6,6 +6,10 @@ import {
   Button,
   Grid,
   MenuItem,
+  FormControl,
+  InputLabel,
+  OutlinedInput,
+  Select,
 } from "@mui/material";
 import { ChangeEvent, useState } from "react";
 import { TabFormProps } from "../types";
@@ -17,7 +21,7 @@ var freqItemsetColumns = [
 ];
 
 interface FrequentItemsetFormProps {
-  contextLevel: string;
+  contextCols: string[];
   userIndex: string;
   temporalWindow: string;
   minSupport: string;
@@ -26,7 +30,7 @@ interface FrequentItemsetFormProps {
 }
 
 interface FrequentItemsetFormErrorProps {
-  contextLevel: boolean;
+  contextCols: boolean;
   userIndex: boolean;
   temporalWindow: boolean;
   minSupport: boolean;
@@ -35,7 +39,7 @@ interface FrequentItemsetFormErrorProps {
 function FrequentItemsetForm(props: TabFormProps) {
   const { dataset, getApiResult, expanded } = props;
   const [formData, setFormData] = useState<FrequentItemsetFormProps>({
-    contextLevel: "0",
+    contextCols: [],
     userIndex: "0",
     temporalWindow: "3",
     minSupport: "0.35",
@@ -43,18 +47,18 @@ function FrequentItemsetForm(props: TabFormProps) {
     aged: true,
   });
   const [formError, setFormError] = useState<FrequentItemsetFormErrorProps>({
-    contextLevel: false,
+    contextCols: false,
     userIndex: false,
     temporalWindow: false,
     minSupport: false,
   });
 
-  var gridSize = expanded ? 6 : 2;
+  var gridSize = expanded ? 6 : 3;
 
   const validateForm = (newFormData: FrequentItemsetFormProps) => {
-    const checkCL =
-      isNaN(parseInt(newFormData.contextLevel)) ||
-      Number(newFormData.contextLevel) < 0;
+    const checkCC = !formData.contextCols.every((elem) =>
+      dataset.contextCols.includes(elem)
+    );
     const checkUI =
       isNaN(parseInt(newFormData.userIndex)) ||
       Number(newFormData.userIndex) < 0 ||
@@ -68,7 +72,7 @@ function FrequentItemsetForm(props: TabFormProps) {
       Number(newFormData.minSupport) >= 1;
 
     setFormError({
-      contextLevel: checkCL,
+      contextCols: checkCC,
       userIndex: checkUI,
       temporalWindow: checkTW,
       minSupport: checkMS,
@@ -87,7 +91,6 @@ function FrequentItemsetForm(props: TabFormProps) {
 
     const formDataAsNumber = {
       ...formData,
-      contextLevel: Number(formData.contextLevel),
       userIndex: Number(formData.userIndex),
       temporalWindow: Number(formData.temporalWindow),
       minSupport: Number(formData.minSupport),
@@ -115,25 +118,37 @@ function FrequentItemsetForm(props: TabFormProps) {
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
-      <Grid container spacing={2}>
+      <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 4 }} alignItems="end">
         <Grid item xs={gridSize}>
-          <TextField
-            id="context-level-input"
-            label="Context level"
-            type="number"
-            name="contextLevel"
-            value={formData.contextLevel}
-            onChange={handleChange}
-            variant="outlined"
-            margin="normal"
-            error={formError.contextLevel}
-            helperText={
-              formError.contextLevel ? "Value between 0 and " /**  TODO*/ : ""
-            }
-          />
+          <FormControl sx={{ mb: 1 }} fullWidth>
+            <InputLabel id="context-label">Context</InputLabel>
+            <Select
+              labelId="context-label"
+              id="context-multiple-select"
+              multiple
+              value={formData.contextCols}
+              name="contextCols"
+              disabled={!dataset.contextCols}
+              onChange={(e) => {
+                const newFormData = {
+                  ...formData,
+                  [e.target.name]: e.target.value,
+                };
+                setFormData(newFormData);
+              }}
+              input={<OutlinedInput label="Context" />}
+            >
+              {dataset.contextCols &&
+                dataset.contextCols.map((name, index) => (
+                  <MenuItem key={index} value={name}>
+                    {name}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
         </Grid>
         <Grid item xs={gridSize}>
-        <TextField
+          <TextField
             id="user-select"
             select
             variant="outlined"
@@ -142,6 +157,7 @@ function FrequentItemsetForm(props: TabFormProps) {
             label="User"
             value={formData.userIndex}
             onChange={handleChange}
+            fullWidth
           >
             {dataset.userList.map((item, index) => (
               <MenuItem value={index} key={index}>
@@ -164,6 +180,7 @@ function FrequentItemsetForm(props: TabFormProps) {
             helperText={
               formError.temporalWindow ? "Value must be greater than 0" : ""
             }
+            fullWidth
           />
         </Grid>
         <Grid item xs={gridSize}>
@@ -178,6 +195,7 @@ function FrequentItemsetForm(props: TabFormProps) {
             margin="normal"
             error={formError.minSupport}
             helperText={formError.minSupport ? "Value between 0 and 1" : ""}
+            fullWidth
           />
         </Grid>
         <Grid item xs={6}>
