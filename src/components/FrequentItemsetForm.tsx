@@ -27,6 +27,7 @@ interface FrequentItemsetFormProps {
   minSupport: string;
   gapsFlag: boolean;
   aged: boolean;
+  prefiltering: boolean;
 }
 
 interface FrequentItemsetFormErrorProps {
@@ -45,6 +46,7 @@ function FrequentItemsetForm(props: TabFormProps) {
     minSupport: "0.35",
     gapsFlag: false,
     aged: true,
+    prefiltering: false,
   });
   const [formError, setFormError] = useState<FrequentItemsetFormErrorProps>({
     contextCols: false,
@@ -198,7 +200,7 @@ function FrequentItemsetForm(props: TabFormProps) {
             fullWidth
           />
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={4}>
           <FormControlLabel
             control={
               <Switch
@@ -211,17 +213,30 @@ function FrequentItemsetForm(props: TabFormProps) {
             label="Gaps"
           />
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={4}>
           <FormControlLabel
             control={
               <Switch
-                name="agedFlag"
+                name="aged"
                 checked={formData.aged}
                 onChange={handleChange}
                 inputProps={{ "aria-label": "controlled" }}
               />
             }
             label="Aged"
+          />
+        </Grid>
+        <Grid item xs={4}>
+          <FormControlLabel
+            control={
+              <Switch
+                name="prefiltering"
+                checked={formData.prefiltering}
+                onChange={handleChange}
+                inputProps={{ "aria-label": "controlled" }}
+              />
+            }
+            label="Pre-filtering"
           />
         </Grid>
         <Grid item xs={12}>

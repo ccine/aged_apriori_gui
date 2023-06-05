@@ -32,6 +32,7 @@ interface RulesFormProps {
   feature: string;
   gapsFlag: boolean;
   aged: boolean;
+  prefiltering: boolean;
 }
 
 interface RulesFormErrorProps {
@@ -54,6 +55,7 @@ function RulesForm(props: TabFormProps) {
     feature: "ZL",
     gapsFlag: false,
     aged: true,
+    prefiltering: false,
   });
   const [formError, setFormError] = useState<RulesFormErrorProps>({
     contextCols: false,
@@ -248,7 +250,7 @@ function RulesForm(props: TabFormProps) {
             fullWidth
           />
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={4}>
           <FormControlLabel
             control={
               <Switch
@@ -261,7 +263,7 @@ function RulesForm(props: TabFormProps) {
             label="Gaps"
           />
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={4}>
           <FormControlLabel
             control={
               <Switch
@@ -272,6 +274,19 @@ function RulesForm(props: TabFormProps) {
               />
             }
             label="Aged"
+          />
+        </Grid>
+        <Grid item xs={4}>
+          <FormControlLabel
+            control={
+              <Switch
+                name="prefiltering"
+                checked={formData.prefiltering}
+                onChange={handleChange}
+                inputProps={{ "aria-label": "controlled" }}
+              />
+            }
+            label="Pre-filtering"
           />
         </Grid>
         <Grid item xs={12}>
