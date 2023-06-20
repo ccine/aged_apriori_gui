@@ -143,7 +143,7 @@ function AddDataset() {
               placeholder="Add new dataset"
             />
             <br />
-            {columns.length > 0 ? (
+            {columns && columns.length > 0 ? (
               <Box sx={{ borderTop: 1, borderColor: "divider", mt: 2 }}>
                 <Grid container spacing={2} sx={{ mt: 1 }}>
                   <Grid item xs={6}>

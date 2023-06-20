@@ -41,7 +41,7 @@ function Home() {
 
   const getResultFromServer = (props: getApiResultProps) => {
     const { apiCallUrl, apiParams, columns, prepareData } = props;
-
+    setError(false);
     setLoading(true);
     axios
       .get(apiCallUrl(chosenDataset!.name), {
@@ -55,6 +55,7 @@ function Home() {
         console.error(error);
         setError(true);
         setLoading(false);
+        setResult(undefined);
       });
   };
 
@@ -139,8 +140,6 @@ function Home() {
                   >
                     Add new dataset
                   </Button>
-                  {/*<Divider orientation="vertical" flexItem />
-                    <FileUpload />*/}
                 </Stack>
                 {/** TABS */}
                 <Box sx={{ borderBottom: 1, borderColor: "divider", mt: 2 }}>

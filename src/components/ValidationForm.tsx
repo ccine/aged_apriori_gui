@@ -15,14 +15,32 @@ import { ChangeEvent, useState } from "react";
 import { TabFormProps } from "../types";
 import { API_CALLS } from "../config";
 
-var validationColumns = [
+var agedValidationColumns = [
   { label: "User", field: "user", type: "string" },
   { label: "Aged Rules Number", field: "agedRulesNumber", type: "number" },
   { label: "Aged Matched", field: "agedMatched", type: "number" },
   { label: "Aged accuracy", field: "agedAccuracy", type: "number" },
-  { label: "Classic Rules Number", field: "classicRulesNumber", type: "number" },
+  {
+    label: "Classic Rules Number",
+    field: "classicRulesNumber",
+    type: "number",
+  },
   { label: "Classic Matched", field: "classicMatched", type: "number" },
   { label: "Classic accuracy", field: "classicAccuracy", type: "number" },
+];
+
+var prefilteringValidationColumns = [
+  { label: "User", field: "user", type: "string" },
+  { label: "Aged Rules Number", field: "agedRulesNumber", type: "number" },
+  { label: "Aged Matched", field: "agedMatched", type: "number" },
+  { label: "Aged accuracy", field: "agedAccuracy", type: "number" },
+  {
+    label: "Prefiltering Rules Number",
+    field: "classicRulesNumber",
+    type: "number",
+  },
+  { label: "Prefiltering Matched", field: "classicMatched", type: "number" },
+  { label: "Prefiltering accuracy", field: "classicAccuracy", type: "number" },
 ];
 
 interface ValidationFormProps {
@@ -46,11 +64,14 @@ interface ValidationFormErrorProps {
 
 function ValidationForm(props: TabFormProps) {
   const { dataset, getApiResult, expanded } = props;
+  const [selectedValidation, setSelectedValidation] = useState<
+    "aged" | "prefiltering"
+  >("aged");
   const [formData, setFormData] = useState<ValidationFormProps>({
     contextCols: [],
     testSize: "20",
     temporalWindow: "3",
-    minSupport: "0.05",
+    minSupport: "0.06",
     minConfidence: "0.8",
     feature: "ZL",
     gapsFlag: false,
@@ -105,12 +126,16 @@ function ValidationForm(props: TabFormProps) {
       temporalWindow: Number(formData.temporalWindow),
       minSupport: Number(formData.minSupport),
       minConfidence: Number(formData.minConfidence),
+      validationType: selectedValidation,
     };
 
     getApiResult({
       apiCallUrl: API_CALLS.getValidation,
       apiParams: formDataAsNumber,
-      columns: validationColumns,
+      columns:
+        selectedValidation === "aged"
+          ? agedValidationColumns
+          : prefilteringValidationColumns,
       prepareData: (data: any) => data,
     });
   };
@@ -129,9 +154,34 @@ function ValidationForm(props: TabFormProps) {
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
-      <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 4 }} alignItems="end">
+      <Grid
+        container
+        rowSpacing={1}
+        columnSpacing={{ xs: 1, sm: 2, md: 4 }}
+        alignItems="end"
+      >
+        <Grid item xs={12}>
+          <TextField
+            id="validation-select"
+            select
+            variant="outlined"
+            margin="normal"
+            name="validationType"
+            value={selectedValidation}
+            label="Select Validation"
+            onChange={(e) =>
+              setSelectedValidation(
+                e.target.value === "aged" ? "aged" : "prefiltering"
+              )
+            }
+            fullWidth
+          >
+            <MenuItem value={"aged"}>Aged Validation</MenuItem>
+            <MenuItem value={"prefiltering"}>Pre-filtering Validation</MenuItem>
+          </TextField>
+        </Grid>
         <Grid item xs={gridSize}>
-        <FormControl sx={{ mb: 1 }} fullWidth>
+          <FormControl sx={{ mb: 1 }} fullWidth>
             <InputLabel id="context-label">Context</InputLabel>
             <Select
               labelId="context-label"
